@@ -1,9 +1,6 @@
 # CLO Polibatam
 
-Short description of what this project does and who it's for. Replace this
-paragraph with a real overview: the problem it solves, the tech stack (e.g.
-frontend framework, backend framework, database), and any relevant links
-(design docs, staging URL, etc).
+CLO Polibatam is a web application used by Batam State Polytechnic to manage and monitor Course Learning Outcomes (CLO).
 
 ## Contributors
 
@@ -101,5 +98,5 @@ npm install --force
 npm run build
 ```
 
-Build output will be located in each folder's respective `dist` or `build`
-directory (adjust based on your actual tooling).
+Build output will be located in each folder's respective `dist`
+directory.
