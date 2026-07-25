@@ -7,7 +7,7 @@ frontend framework, backend framework, database), and any relevant links
 
 ## Contributors
 
-- L Azlan Rafar — role (https://github.com/lazlanrafar)
+- L Azlan Rafar (https://github.com/lazlanrafar)
 - Kenny Aragon Siahaan (https://github.com/aragonken)
 - Sakila Ananda Putri (https://github.com/sakila161105)
 
@@ -61,8 +61,18 @@ docker compose down
 ```bash
 cd backend
 npm install
+npm run prisma:push
+npm run prisma:seed
 npm run dev
 ```
+
+`prisma:push` syncs your Prisma schema with the database, so make sure the
+database container is up (see [Database & Redis](#2-database--redis-optional))
+and your `.env` is configured before running it. `prisma:seed` populates the
+database with initial/seed data.
+    
+> **Note:** Make sure `NODE_ENV` is set to `development` in `backend/.env`
+> before running the dev server.
 
 ### Frontend
 
@@ -78,7 +88,7 @@ npm run dev
 
 ```bash
 cd backend
-npm install --force
+npm install
 npm run prisma:push
 npm run build
 ```
