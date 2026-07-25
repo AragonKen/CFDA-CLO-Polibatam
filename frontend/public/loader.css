@@ -1,0 +1,43 @@
+body {
+  margin: 0;
+}
+
+html {
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+#loading-bg {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--initial-loader-bg, #9a403a);
+  block-size: 100%;
+  gap: 1rem 0;
+  inline-size: 100%;
+}
+
+/* HTML: <div class="loader"></div> */
+.loader {
+  height: 4px;
+  width: 100%;
+  max-width: 200px;
+  --c: no-repeat linear-gradient(#173963 0 0);
+  background: var(--c), var(--c), #ade7f7;
+  background-size: 60% 100%;
+  animation: l16 3s infinite;
+  margin: 3rem auto;
+}
+@keyframes l16 {
+  0% {
+    background-position: -150% 0, -150% 0;
+  }
+  66% {
+    background-position: 250% 0, -150% 0;
+  }
+  100% {
+    background-position: 250% 0, 250% 0;
+  }
+}

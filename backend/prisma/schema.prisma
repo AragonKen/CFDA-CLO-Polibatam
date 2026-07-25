@@ -1,0 +1,512 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model tbm_role {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  label      String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  is_deleted Boolean  @default(false)
+
+  role_permissions tbm_role_permission[]
+  users tbm_user[]
+}
+
+model tbm_permission {
+  id                  String                @id @default(cuid())
+  name                String                @unique
+  created_at          DateTime              @default(now())
+  updated_at          DateTime              @updatedAt
+  is_deleted          Boolean               @default(false)
+  tbm_role_permission tbm_role_permission[]
+}
+
+model tbm_role_permission {
+  role_id       String
+  permission_id String
+
+  role       tbm_role       @relation(fields: [role_id], references: [id])
+  permission tbm_permission @relation(fields: [permission_id], references: [id])
+
+  @@id([role_id, permission_id])
+}
+
+model tbm_user {
+  id                 String  @id @default(cuid())
+  nip                String  @unique
+  name               String
+  title_prefix       String?
+  title_suffix       String?
+  religion           String?
+  email              String?
+  gender             String?
+  employee_status_id String?
+  employee_status    String?
+  contract_status_id String?
+  contract_status    String?
+  staff_number       String?
+  staff_role         String?
+  unit_number        String?
+  unit               String?
+  line_number        String?
+  is_admin           Boolean @default(false) // Deprecated. use roles column instead
+  role_id            String?
+  department_id      String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  is_deleted Boolean  @default(false)
+
+  role tbm_role? @relation(fields: [role_id], references: [id])
+  department tbm_department? @relation(fields: [department_id], references: [id])
+
+  creator_courses  tbm_course[] @relation("tbm_course_creator")
+  modifier_courses tbm_course[] @relation("tbm_course_modifier")
+
+  creator_course_learning_outcomes  tbm_course_learning_outcome[] @relation("tbm_course_learning_outcome_creator")
+  modifier_course_learning_outcomes tbm_course_learning_outcome[] @relation("tbm_course_learning_outcome_modifier")
+
+  creator_course_learning_outcome_details  tbm_course_learning_outcome_rubric[] @relation("tbm_course_learning_outcome_rubric_creator")
+  modifier_course_learning_outcome_details tbm_course_learning_outcome_rubric[] @relation("tbm_course_learning_outcome_rubric_modifier")
+
+  creator_course_assessment_plans  tbm_course_assessment_plan[] @relation("tbm_course_assessment_plan_creator")
+  modifier_course_assessment_plans tbm_course_assessment_plan[] @relation("tbm_course_assessment_plan_modifier")
+
+  teacher_assessments  tbm_assessment[] @relation("tbm_assessment_teacher")
+  creator_assessments  tbm_assessment[] @relation("tbm_assessment_creator")
+  modifier_assessments tbm_assessment[] @relation("tbm_assessment_modifier")
+
+  creator_assessment_students  tbm_assessment_student[] @relation("tbm_assessment_student_creator")
+  modifier_assessment_students tbm_assessment_student[] @relation("tbm_assessment_student_modifier")
+}
+
+model tbm_student {
+  id   String  @id @default(cuid())
+  nim  String? @unique
+  name String?
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  assessment_students tbm_assessment_student[]
+}
+
+model tbm_grading_category {
+  id    String  @id @default(cuid())
+  title String? @default("")
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  grading tbm_grading[]
+}
+
+model tbm_grading {
+  id          String  @id @default(cuid())
+  lower_limit Int?    @default(0)
+  upper_limit Int?    @default(0)
+  grade       String? @default("")
+
+  category_id String?
+  category    tbm_grading_category? @relation(fields: [category_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  assessment_students tbm_assessment_student[]
+}
+
+model tbm_assessment_type {
+  id    String  @id @default(cuid())
+  code  String? @default("")
+  title String? @default("")
+
+  background_color String? @default("")
+  text_color       String? @default("")
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  course_assessment_types   tbm_course_assessment_type[]
+  assessment_student_scores tbm_assessment_student_score[]
+}
+
+// ====================================================
+// SETUP
+// ====================================================
+
+model tbm_proficiency_level {
+  id          String  @id @default(cuid())
+  level       Int
+  description String? @default("")
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  details     tbm_proficiency_level_detail[]
+  assessments tbm_assessment[]
+}
+
+model tbm_proficiency_level_detail {
+  id          String  @id @default(cuid())
+  level       Int
+  description String? @default("")
+  lower_limit Int?    @default(0)
+  upper_limit Int?    @default(0)
+
+  proficiency_level_id String?
+  proficiency_level    tbm_proficiency_level? @relation(fields: [proficiency_level_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  assessment_students       tbm_assessment_student[]
+  assessment_student_scores tbm_assessment_student_score[]
+}
+
+model tbm_assessment_method {
+  id    String  @id @default(cuid())
+  title String? @default("")
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  course_learning_outcomes tbm_course_learning_outcome[]
+}
+
+model tbm_department {
+  id    String  @id @default(cuid())
+  code  String? @default("")
+  title String? @default("")
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  studi_programs tbm_study_program[]
+  users tbm_user[]
+}
+
+model tbm_study_program {
+  id    String  @id @default(cuid())
+  code  String? @default("")
+  title String? @default("")
+
+  department_id String
+  department    tbm_department @relation(fields: [department_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  rubrics               tbm_rubric[]
+  student_outcomes      tbm_student_outcome[]
+  cdio_syllabus_parents tbm_cdio_syllabus_parent[]
+  cdio_syllabuses       tbm_cdio_syllabus[]
+  courses               tbm_course[]
+}
+
+model tbm_student_outcome {
+  id          String  @id @default(cuid())
+  order       Int     @default(autoincrement())
+  code        String?
+  title       String? @default("")
+  description String? @default("") @db.Text
+
+  study_program_id String?
+  study_program    tbm_study_program? @relation(fields: [study_program_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  rubric tbm_rubric[]
+}
+
+model tbm_cdio_syllabus_parent {
+  id    String   @id @default(cuid())
+  level Decimal? @db.Decimal(2, 1)
+  title String?  @default("")
+
+  study_program_id String
+  study_program    tbm_study_program @relation(fields: [study_program_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  cdio_syllabuses tbm_cdio_syllabus[]
+}
+
+model tbm_cdio_syllabus {
+  id    String   @id @default(cuid())
+  level Decimal? @db.Decimal(2, 1)
+  title String?  @default("")
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  parent_id String?
+  parent    tbm_cdio_syllabus_parent? @relation(fields: [parent_id], references: [id])
+
+  study_program_id String
+  study_program    tbm_study_program @relation(fields: [study_program_id], references: [id])
+
+  rubric tbm_rubric[]
+}
+
+model tbm_rubric {
+  id String @id @default(cuid())
+
+  code  String?
+  title String?
+
+  description_level_1 String? @default("-")
+  description_level_2 String? @default("-")
+  description_level_3 String? @default("-")
+  description_level_4 String? @default("-")
+  description_level_5 String? @default("-")
+
+  study_program_id String
+  study_program    tbm_study_program @relation(fields: [study_program_id], references: [id])
+
+  student_outcome_id String
+  student_outcome    tbm_student_outcome @relation(fields: [student_outcome_id], references: [id])
+
+  cdio_syllabus_id String
+  cdio_syllabus    tbm_cdio_syllabus @relation(fields: [cdio_syllabus_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  course_learning_outcome_details tbm_course_learning_outcome_rubric[]
+  course_assessment_plans         tbm_course_assessment_plan[]
+}
+
+// ====================================================
+// DATA MAIN
+// ====================================================
+
+model tbm_course {
+  id     String  @id @default(cuid())
+  code   String? @unique
+  title  String? @default("")
+  credit Int?    @default(0)
+
+  is_ready Boolean? @default(false)
+
+  study_program_id String
+  study_program    tbm_study_program @relation(fields: [study_program_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  creator_id String?
+  creator    tbm_user? @relation("tbm_course_creator", fields: [creator_id], references: [id])
+
+  modifier_id String?
+  modifier    tbm_user? @relation("tbm_course_modifier", fields: [modifier_id], references: [id])
+
+  course_learning_outcomes tbm_course_learning_outcome[]
+
+  assessments      tbm_assessment[]
+  assessment_types tbm_course_assessment_type[]
+  assessment_plans tbm_course_assessment_plan[]
+}
+
+model tbm_course_assessment_type {
+  id String @id @default(cuid())
+
+  weight   Int? @default(0)
+  quantity Int? @default(0)
+
+  course_id String?
+  course    tbm_course? @relation(fields: [course_id], references: [id])
+
+  assessment_type_id String?
+  assessment_type    tbm_assessment_type? @relation(fields: [assessment_type_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+}
+
+model tbm_course_learning_outcome {
+  id          String  @id @default(cuid())
+  code        String? @default("")
+  title       String? @default("")
+  description String? @default("")
+
+  course_id String?
+  course    tbm_course? @relation(fields: [course_id], references: [id])
+
+  assessment_method_id String?
+  assessment_method    tbm_assessment_method? @relation(fields: [assessment_method_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  creator_id String?
+  creator    tbm_user? @relation("tbm_course_learning_outcome_creator", fields: [creator_id], references: [id])
+
+  modifier_id String?
+  modifier    tbm_user? @relation("tbm_course_learning_outcome_modifier", fields: [modifier_id], references: [id])
+
+  rubrics tbm_course_learning_outcome_rubric[]
+}
+
+model tbm_course_learning_outcome_rubric {
+  id String @id @default(cuid())
+
+  course_learning_outcome_id String?
+  course_learning_outcome    tbm_course_learning_outcome? @relation(fields: [course_learning_outcome_id], references: [id])
+
+  rubric_id String?
+  rubric    tbm_rubric? @relation(fields: [rubric_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  creator_id String?
+  creator    tbm_user? @relation("tbm_course_learning_outcome_rubric_creator", fields: [creator_id], references: [id])
+
+  modifier_id String?
+  modifier    tbm_user? @relation("tbm_course_learning_outcome_rubric_modifier", fields: [modifier_id], references: [id])
+}
+
+model tbm_course_assessment_plan {
+  id String @id @default(cuid())
+
+  week1          String? @default("")
+  week2          String? @default("")
+  week3          String? @default("")
+  week4          String? @default("")
+  week5          String? @default("")
+  week6          String? @default("")
+  week7          String? @default("")
+  week8          String? @default("")
+  week9          String? @default("")
+  week10         String? @default("")
+  week11         String? @default("")
+  week12         String? @default("")
+  week13         String? @default("")
+  week14         String? @default("")
+  mid_semester   String? @default("")
+  final_semester String? @default("")
+
+  course_id String?
+  course    tbm_course? @relation(fields: [course_id], references: [id])
+
+  rubric_id String?
+  rubric    tbm_rubric? @relation(fields: [rubric_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  creator_id String?
+  creator    tbm_user? @relation("tbm_course_assessment_plan_creator", fields: [creator_id], references: [id])
+
+  modifier_id String?
+  modifier    tbm_user? @relation("tbm_course_assessment_plan_modifier", fields: [modifier_id], references: [id])
+}
+
+model tbm_assessment {
+  id                String   @id @default(cuid())
+  semester          String?  @default("")
+  academic_year     String?  @default("")
+  class             String?  @default("")
+  target_attainment Int?     @default(0)
+  is_ready          Boolean? @default(false)
+
+  teacher_nip String?
+  teacher     tbm_user? @relation("tbm_assessment_teacher", fields: [teacher_nip], references: [nip])
+
+  course_id String?
+  course    tbm_course? @relation(fields: [course_id], references: [id])
+
+  proficiency_level_id String?
+  proficiency_level    tbm_proficiency_level? @relation(fields: [proficiency_level_id], references: [id])
+
+  creator_id String?
+  creator    tbm_user? @relation("tbm_assessment_creator", fields: [creator_id], references: [id])
+
+  modifier_id String?
+  modifier    tbm_user? @relation("tbm_assessment_modifier", fields: [modifier_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  students tbm_assessment_student[]
+}
+
+model tbm_assessment_student {
+  id          String   @id @default(cuid())
+  final_score Decimal? @default(0)
+
+  student_id String?
+  student    tbm_student? @relation(fields: [student_id], references: [id])
+
+  assessment_id String?
+  assessment    tbm_assessment? @relation(fields: [assessment_id], references: [id])
+
+  grading_id String?
+  grading    tbm_grading? @relation(fields: [grading_id], references: [id])
+
+  proficiency_level_detail_id String?
+  proficiency_level_detail    tbm_proficiency_level_detail? @relation(fields: [proficiency_level_detail_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+
+  creator_id String?
+  creator    tbm_user? @relation("tbm_assessment_student_creator", fields: [creator_id], references: [id])
+
+  modifier_id String?
+  modifier    tbm_user? @relation("tbm_assessment_student_modifier", fields: [modifier_id], references: [id])
+
+  scores tbm_assessment_student_score[]
+}
+
+model tbm_assessment_student_score {
+  id String @id @default(cuid())
+
+  index Int? @default(0)
+  score Int? @default(0)
+
+  assessment_student_id String?
+  assessment_student    tbm_assessment_student? @relation(fields: [assessment_student_id], references: [id])
+
+  assessment_type_id String?
+  assessment_type    tbm_assessment_type? @relation(fields: [assessment_type_id], references: [id])
+
+  proficiency_level_detail_id String?
+  proficiency_level_detail    tbm_proficiency_level_detail? @relation(fields: [proficiency_level_detail_id], references: [id])
+
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+  is_deleted Boolean   @default(false)
+}

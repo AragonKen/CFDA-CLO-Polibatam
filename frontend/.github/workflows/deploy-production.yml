@@ -1,0 +1,143 @@
+name: Deploy Vue.js App to Production Server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    environment: production
+
+    steps:
+      - name: 🚀 Deploy to Production Server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: 103.209.1.151
+          username: webadminclo
+          password: 8oP76%*awk
+          port: 22
+          command_timeout: 15m
+          script: |
+            echo "🔄 Starting Vue.js deployment process..."
+
+            # Configure passwordless sudo for deployment commands
+            echo "🔧 Configuring passwordless sudo..."
+            echo '8oP76%*awk' | sudo -S bash -c 'echo "webadminclo ALL=(ALL) NOPASSWD: /usr/bin/git, /usr/bin/pnpm, /usr/bin/pm2, /usr/bin/systemctl, /usr/bin/nginx, /usr/bin/cp, /usr/bin/rm, /usr/bin/mkdir, /usr/bin/chown" >> /etc/sudoers.d/webadminclo-deploy'
+
+            # Navigate to project directory
+            cd /var/www/clo-polibatam-app || {
+              echo "❌ Failed to navigate to project directory"
+              exit 1
+            }
+
+            echo "📂 Current directory: $(pwd)"
+
+            # Pull latest changes
+            echo "📥 Pulling latest changes from main branch..."
+            sudo git pull origin main || {
+              echo "❌ Failed to pull changes"
+              exit 1
+            }
+
+            # Set production environment
+            echo "🌍 Setting production environment..."
+            export NODE_ENV=production
+
+            # Install dependencies
+            echo "📦 Installing dependencies..."
+            sudo pnpm install || {
+              echo "❌ Failed to install dependencies"
+              exit 1
+            }
+
+            # Build Vue.js application
+            echo "🏗️ Building Vue.js application..."
+            sudo pnpm build || {
+              echo "❌ Failed to build Vue.js application"
+              exit 1
+            }
+
+            # Create backup of current deployment (if exists)
+            echo "💾 Creating backup of current deployment..."
+            if [ -d "/var/www/html/clo-polibatam-app-backup" ]; then
+              sudo rm -rf /var/www/html/clo-polibatam-app-backup
+            fi
+            if [ -d "/var/www/html/clo-polibatam-app" ]; then
+              sudo cp -r /var/www/html/clo-polibatam-app /var/www/html/clo-polibatam-app-backup
+            fi
+
+            # Create web directory if it doesn't exist
+            echo "📁 Preparing web directory..."
+            sudo mkdir -p /var/www/html/clo-polibatam-app
+
+            # Copy built files to web directory
+            echo "📋 Copying built files to web directory..."
+            sudo cp -r dist/* /var/www/html/clo-polibatam-app/ || {
+              echo "❌ Failed to copy built files"
+              exit 1
+            }
+
+            # Set proper ownership and permissions
+            echo "🔐 Setting proper ownership and permissions..."
+            sudo chown -R www-data:www-data /var/www/html/clo-polibatam-app
+            sudo chmod -R 755 /var/www/html/clo-polibatam-app
+
+            # Test Nginx configuration
+            echo "🧪 Testing Nginx configuration..."
+            sudo nginx -t || {
+              echo "❌ Nginx configuration test failed"
+              exit 1
+            }
+
+            # Reload Nginx to serve new files
+            echo "🌐 Reloading Nginx..."
+            sudo systemctl reload nginx || {
+              echo "❌ Failed to reload Nginx"
+              exit 1
+            }
+
+            # Check Nginx status
+            echo "📊 Nginx Status:"
+            sudo systemctl status nginx --no-pager -l
+
+            # Verify deployment
+            echo "🔍 Verifying deployment..."
+            if [ -f "/var/www/html/clo-polibatam-app/index.html" ]; then
+              echo "✅ index.html found in web directory"
+            else
+              echo "❌ index.html not found in web directory"
+              exit 1
+            fi
+
+            # Clean up old backup (keep only one)
+            echo "🧹 Cleaning up old backups..."
+            if [ -d "/var/www/html/clo-polibatam-app-backup-old" ]; then
+              sudo rm -rf /var/www/html/clo-polibatam-app-backup-old
+            fi
+
+            echo "✅ Vue.js deployment completed successfully!"
+            echo "🌐 Application is now available at your domain"
+
+      - name: 🎉 Deployment Success Notification
+        if: success()
+        run: |
+          echo "🎉 Vue.js deployment to production server completed successfully!"
+          echo "🚀 Application is now running with the latest changes from main branch"
+          echo "🌐 The built Vue.js app is now served by Nginx"
+
+      - name: ❌ Deployment Failure Notification
+        if: failure()
+        run: |
+          echo "❌ Vue.js deployment failed! Please check the logs above for details."
+          echo "🔍 Common issues to check:"
+          echo "   - Server connectivity"
+          echo "   - Git repository access"
+          echo "   - Node.js/pnpm installation"
+          echo "   - Vue.js build process"
+          echo "   - Nginx configuration"
+          echo "   - File permissions and ownership"
+          echo "   - Available disk space"
